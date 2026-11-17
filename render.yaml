@@ -1,0 +1,66 @@
+# =============================================================================
+#  Render Blueprint: 8 stateless instances + one managed Redis (Key Value).
+#
+#  Deploy with: Render Dashboard -> New -> Blueprint -> point at this repo.
+#  Render creates the Redis service, injects REDIS_URL into every instance and
+#  starts eight copies of the same process behind its load balancer. No sticky
+#  sessions are enabled: every instance can serve every request and every
+#  socket, because all shared state lives in Redis.
+#
+#  Secrets marked `sync: false` must be typed in the dashboard once.
+# =============================================================================
+
+services:
+  - type: keyvalue
+    name: preconteo-redis
+    plan: starter
+    region: oregon
+    # Empty list = reachable only from services inside this Render account.
+    ipAllowList: []
+    maxmemoryPolicy: noeviction
+
+  - type: web
+    name: preconteo-backend
+    runtime: node
+    plan: standard          # a plan that allows multiple instances
+    region: oregon
+    rootDir: Backend
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /health
+    numInstances: 8         # 8 identical, stateless processes
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_FORMAT
+        value: json
+      # Do not set PORT. Render injects it and the process must bind to that value.
+      - key: KEY_PREFIX
+        value: preconteo
+      # INSTANCE_ID is not set: the app falls back to RENDER_INSTANCE_ID.
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: preconteo-redis
+          property: connectionString
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+      - key: JURY_TOKEN
+        generateValue: true
+      - key: AUDITOR_TOKEN
+        generateValue: true
+      - key: ADMIN_TOKEN
+        generateValue: true
+      # Operational metrics are read by the public /ops dashboard of the demo.
+      # Set to false and read /metrics with the admin token for a real election.
+      - key: METRICS_PUBLIC
+        value: true
+      - key: ENABLE_DEMO_ENDPOINTS
+        value: true
+      - key: PUBLISH_WINDOW_MS
+        value: 2000
