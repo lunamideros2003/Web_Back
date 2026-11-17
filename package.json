@@ -1,0 +1,32 @@
+{
+  "name": "preconteo-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Realtime election preconteo backend: WebSockets, SSE, Redis backplane",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "dev:cluster": "node scripts/cluster.js",
+    "seed": "node scripts/seed.js",
+    "smoke": "node scripts/smoke-test.js",
+    "bench:load": "node bench/load-test.js",
+    "bench:reconnect": "node bench/reconnect-storm.js",
+    "bench:slow": "node bench/slow-client.js",
+    "test": "node --test \"test/*.test.js\""
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.48.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "ioredis": "^5.4.2",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "http-proxy": "^1.18.1"
+  }
+}
